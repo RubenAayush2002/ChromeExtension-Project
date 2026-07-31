@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Personal Home Base — Settings</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <main class="settings">
+    <h1>Settings</h1>
+
+    <section>
+      <h2>General</h2>
+      <label>
+        Your name
+        <input id="name" type="text" placeholder="e.g. Ruben" />
+      </label>
+      <label>
+        Search engine
+        <select id="search-engine">
+          <option value="google">Google</option>
+          <option value="duckduckgo">DuckDuckGo</option>
+          <option value="bing">Bing</option>
+        </select>
+      </label>
+    </section>
+
+    <section>
+      <h2>Theme</h2>
+      <label>
+        Mode
+        <select id="theme-mode">
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+          <option value="auto">Auto</option>
+        </select>
+      </label>
+      <div id="auto-theme-options" hidden>
+        <label>
+          Auto basis
+          <select id="theme-auto-basis">
+            <option value="system">Follow system</option>
+            <option value="time">Follow a time range</option>
+          </select>
+        </label>
+        <div id="time-range-options" hidden>
+          <label>
+            Dark starts at (hour, 0-23)
+            <input id="theme-start-hour" type="number" min="0" max="23" />
+          </label>
+          <label>
+            Dark ends at (hour, 0-23)
+            <input id="theme-end-hour" type="number" min="0" max="23" />
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Weather</h2>
+      <label>
+        City or postcode
+        <input id="weather-city" type="text" placeholder="e.g. London" />
+      </label>
+      <label>
+        OpenWeatherMap API key
+        <input id="weather-api-key" type="password" placeholder="Enter your API key" />
+      </label>
+      <label class="checkbox-label">
+        <input id="weather-matched-scenery" type="checkbox" />
+        Weather-matched scenery background (static scene images)
+      </label>
+    </section>
+
+    <button id="save-button" type="button">Save</button>
+    <p id="save-status" class="save-status" hidden></p>
+  </main>
+
+  <script type="module" src="./main.ts"></script>
+</body>
+</html>

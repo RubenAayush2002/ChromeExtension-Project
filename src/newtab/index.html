@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>New Tab</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div id="background-layer"></div>
+
+  <div class="page">
+    <header class="top-row">
+      <div class="greeting-block">
+        <h1 id="greeting"></h1>
+        <div class="datetime">
+          <span id="date"></span>
+          <span id="clock"></span>
+        </div>
+      </div>
+      <button id="bookmarks-icon" class="icon-button" title="My Bookmarks" aria-label="My Bookmarks">
+        📑 My Bookmarks
+      </button>
+    </header>
+
+    <main class="center-column">
+      <div class="search-block">
+        <input id="search-input" class="search-bar" type="text" placeholder="Search the web" autocomplete="off" />
+        <ul id="search-suggestions" class="suggestions" hidden></ul>
+      </div>
+
+      <input id="focus-input" class="focus-bar" type="text" placeholder="Today's Focus" autocomplete="off" />
+    </main>
+
+    <aside id="tasks-box" class="tasks-box" hidden>
+      <h2>Today's Tasks</h2>
+      <input id="task-input" class="task-input" type="text" placeholder="Add a task and press Enter" autocomplete="off" />
+      <div id="split-blob-action" class="split-blob-action" hidden>
+        <button id="split-blob-button"></button>
+      </div>
+      <ul id="task-list"></ul>
+    </aside>
+
+    <div id="weather-corner" class="weather-corner" hidden>
+      <span id="weather-temp"></span>
+      <span id="weather-place"></span>
+      <p id="weather-advice"></p>
+      <p id="weather-updated" class="weather-updated" hidden></p>
+    </div>
+
+    <footer id="recently-closed" class="recently-closed" hidden>
+      <div id="recently-closed-list" class="recently-closed-list"></div>
+    </footer>
+  </div>
+
+  <script type="module" src="./main.ts"></script>
+</body>
+</html>

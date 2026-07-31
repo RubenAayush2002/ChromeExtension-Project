@@ -4,7 +4,7 @@ A Chrome extension that replaces your new tab page with a calm personal dashboar
 
 ## What it does
 
-- **New tab page:** live greeting & clock, a "Search the web" bar with instant open-tab/history suggestions as you type, a "Today's Focus" line, a "Today's Tasks" list, customizable background (gradients, your own photos/videos, a curated art pack, or animated scenery that matches the current weather), a weather corner, and a strip of recently closed tabs.
+- **New tab page:** live greeting & clock, a "Search the web" bar with instant open-tab/history suggestions as you type, a "Today's Focus" line, a "Today's Tasks" list, customizable background (gradients, your own photos, a curated art pack, or static scenery that matches the current weather), a weather corner, and a strip of recently closed tabs.
 - **Toolbar popup:** tidy tabs into color-coded groups, close duplicate tabs (even with different tracking links), save/reopen named sets of tabs, get nudged when you have too many tabs open.
 - **Bookmarks panel:** always-reachable, searchable, drag-to-reorder, auto-labelled, stays in sync with Chrome's own bookmarks.
 - **Read Later & Reading View:** save pages for later with a short preview, and get a clean, distraction-free reading mode for articles.
