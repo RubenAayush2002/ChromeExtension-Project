@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Personal Home Base</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <main class="popup">
+    <button id="tidy-tabs" class="action-button">Tidy tabs into groups</button>
+    <button id="close-duplicates" class="action-button">Close duplicate tabs</button>
+    <button id="open-bookmarks" class="action-button">Open bookmarks</button>
+    <button id="save-tab-set" class="action-button">Save current tabs as a set</button>
+    <button id="save-read-later" class="action-button">Save this page for later</button>
+    <button id="open-reading-view" class="action-button">Open reading view</button>
+
+    <section class="tab-sets">
+      <h2>Saved tab sets</h2>
+      <ul id="tab-set-list" class="tab-set-list"></ul>
+    </section>
+
+    <p id="status" class="status" hidden></p>
+  </main>
+
+  <script type="module" src="./main.ts"></script>
+</body>
+</html>

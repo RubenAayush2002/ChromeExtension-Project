@@ -2,7 +2,7 @@ import { greetingText } from '@/lib/greeting';
 import { getFocus, setFocus } from '@/lib/focus-store';
 import { splitTaskBlob } from '@/lib/task-split';
 import { addTask, toggleTaskDone, type Task } from '@/lib/task-store';
-import { createIndexedDbTaskRepo } from './task-repo-indexeddb';
+import { createIndexedDbTaskRepo } from '@/db/task-repo';
 import { buildSuggestions, moveSelection, type SearchSuggestion } from '@/lib/instant-search';
 import { fetchWeather, formatLastUpdated } from '@/lib/weather-store';
 import { celsiusToFahrenheit, adviceForScene } from '@/lib/weather-lookup';
@@ -253,8 +253,7 @@ async function initBackground() {
 
 async function initBookmarksIcon() {
   document.getElementById('bookmarks-icon')!.addEventListener('click', () => {
-    // Phase 2 builds the real bookmarks side panel; stub navigates to a placeholder for now.
-    window.alert('Bookmarks panel arrives in Phase 2.');
+    chrome.tabs.create({ url: chrome.runtime.getURL('bookmarks-panel/index.html') });
   });
 }
 

@@ -1,8 +1,40 @@
 import { FOCUS_MIDNIGHT_ALARM, resetFocusForNewDay } from '@/lib/focus-store';
 import { TASK_PURGE_ALARM, purgeOldCompletedTasks } from '@/lib/task-store';
-import { createIndexedDbTaskRepo } from '@/newtab/task-repo-indexeddb';
+import { createIndexedDbTaskRepo } from '@/db/task-repo';
+import { shouldNotify, recordNotified, recordBelowThreshold } from '@/lib/tab-limit-nudge';
+import { getTabLimitThreshold, getNudgeState, setNudgeState } from '@/lib/tab-limit-settings';
 
 const WEATHER_REFRESH_ALARM = 'weather-refresh';
+
+async function checkTabLimitNudge() {
+  const [tabs, threshold, state] = await Promise.all([
+    chrome.tabs.query({}),
+    getTabLimitThreshold(chrome.storage.local),
+    getNudgeState(chrome.storage.local),
+  ]);
+
+  const count = tabs.length;
+
+  if (count < threshold) {
+    if (state.lastNotifiedAtCount !== null) {
+      await setNudgeState(chrome.storage.local, recordBelowThreshold());
+    }
+    return;
+  }
+
+  if (shouldNotify(count, threshold, state)) {
+    chrome.notifications.create({
+      type: 'basic',
+      iconUrl: chrome.runtime.getURL('icons/icon128.png'),
+      title: 'Too many tabs open',
+      message: `You have ${count} tabs open — might be a good time to tidy up.`,
+    });
+    await setNudgeState(chrome.storage.local, recordNotified(count));
+  }
+}
+
+chrome.tabs.onCreated.addListener(() => void checkTabLimitNudge());
+chrome.tabs.onRemoved.addListener(() => void checkTabLimitNudge());
 
 function msUntilNextMidnight(now: Date): number {
   const next = new Date(now);

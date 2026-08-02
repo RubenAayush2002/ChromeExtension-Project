@@ -37,10 +37,12 @@ export default defineConfig({
         newtab: resolve(root, 'newtab/index.html'),
         options: resolve(root, 'options/index.html'),
         background: resolve(root, 'background/index.ts'),
+        popup: resolve(root, 'popup/index.html'),
+        bookmarksPanel: resolve(root, 'bookmarks-panel/index.html'),
+        readingView: resolve(root, 'reading-view/index.html'),
       },
       output: {
-        entryFileNames: (chunk) =>
-          chunk.name === 'background' ? 'background/index.js' : 'assets/[name]-[hash].js',
+        entryFileNames: (chunk) => (chunk.name === 'background' ? 'background/index.js' : 'assets/[name]-[hash].js'),
       },
     },
   },
