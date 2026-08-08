@@ -86,3 +86,72 @@ body {
   opacity: 0.7;
   margin: 4px 0 0;
 }
+
+.read-later {
+  margin-top: 8px;
+}
+
+.read-later h2 {
+  font-size: 12px;
+  opacity: 0.6;
+  margin: 4px 0;
+}
+
+/* The empty note is toggled via the [hidden] property, so it must not get a
+   `display` from this class rule — an author `display` beats the UA
+   stylesheet's [hidden] { display: none } at equal specificity and the note
+   would never hide. */
+.empty-note {
+  margin: 4px 0;
+  font-size: 12px;
+  opacity: 0.5;
+}
+
+.read-later-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.read-later-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.read-later-row:hover {
+  background: rgba(128, 128, 128, 0.1);
+}
+
+.read-later-body {
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.read-later-title {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.read-later-preview {
+  opacity: 0.6;
+  font-size: 11px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

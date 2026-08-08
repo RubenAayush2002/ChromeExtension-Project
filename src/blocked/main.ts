@@ -22,21 +22,34 @@ async function render() {
   document.getElementById('progress')!.textContent = total > 0 ? `${done} of ${total} tasks done today` : '';
 }
 
-document.getElementById('allow-5min')!.addEventListener('click', async () => {
-  const hostname = getBlockedUrl() ? extractHostname(getBlockedUrl()!) : null;
-  if (!hostname) return;
+/** Leaves this page for `url`, or opens a fresh tab when there's nowhere to
+ *  go back to. `chrome://newtab` can't be reached via window.location (Chrome
+ *  blocks scripted navigation to chrome:// URLs), so that case needs the tabs
+ *  API instead of an assignment that would silently do nothing. */
+function leaveBlockedPage(url: string | null) {
+  if (url) {
+    window.location.href = url;
+    return;
+  }
+  void chrome.tabs.create({});
+  window.close();
+}
 
+document.getElementById('allow-5min')!.addEventListener('click', async () => {
+  const blockedUrl = getBlockedUrl();
+  const hostname = blockedUrl ? extractHostname(blockedUrl) : null;
+  if (!blockedUrl || !hostname) return;
+
+  // Awaited so the pass is durably in storage before we navigate — the
+  // background's onBeforeNavigate check re-reads it, and racing the write
+  // would bounce us straight back here.
   await grantPass(chrome.storage.local, hostname, Date.now());
-  window.location.href = getBlockedUrl()!;
+  leaveBlockedPage(blockedUrl);
 });
 
 document.getElementById('turn-off-focus')!.addEventListener('click', async () => {
   await setFocusModeActive(chrome.storage.local, false);
-  const blockedUrl = getBlockedUrl();
-  // Always leave this page — if we don't know which site was originally
-  // blocked (e.g. this page was opened directly, with no ?url= param),
-  // land on the new tab page instead of doing nothing.
-  window.location.href = blockedUrl ?? 'chrome://newtab';
+  leaveBlockedPage(getBlockedUrl());
 });
 
 void render();

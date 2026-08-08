@@ -9,11 +9,18 @@ import { fetchWeather } from '@/lib/weather-store';
 import { fetchWeatherFromOpenWeatherMap } from '@/newtab/weather-fetcher';
 import { planTabGroupsByHostname } from '@/lib/tab-tidy';
 import { findDuplicateTabIds } from '@/lib/duplicate-tabs';
+import { saveForLater } from '@/lib/read-later-store';
+import { createIndexedDbReadLaterRepo } from '@/db/read-later-repo';
 
 const WEATHER_REFRESH_ALARM = 'weather-refresh';
 const FOCUS_MODE_PASS_SWEEP_ALARM = 'focus-mode-pass-sweep';
 
 async function checkFocusModeNavigation(tabId: number, url: string) {
+  // Never bounce the extension's own pages — the Blocked page itself would
+  // otherwise be a redirect target, and its "allow 5 minutes" hand-off back to
+  // the blocked site could loop.
+  if (url.startsWith(chrome.runtime.getURL(''))) return;
+
   const hostname = extractHostname(url);
   if (!hostname) return;
 
@@ -100,9 +107,17 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 });
 
 interface EdgeTabMessage {
-  type: 'open-reading-view' | 'bookmark-page' | 'tidy-tabs' | 'close-duplicates' | 'take-screenshot';
+  type:
+    | 'open-reading-view'
+    | 'bookmark-page'
+    | 'tidy-tabs'
+    | 'close-duplicates'
+    | 'take-screenshot'
+    | 'save-read-later';
   title?: string;
   url?: string;
+  preview?: string;
+  previewIsFallback?: boolean;
 }
 
 async function handleEdgeTabMessage(message: EdgeTabMessage, senderTabId: number | undefined) {
@@ -132,6 +147,20 @@ async function handleEdgeTabMessage(message: EdgeTabMessage, senderTabId: number
       const closable = tabs.filter((t): t is chrome.tabs.Tab & { id: number; url: string } => !!t.id && !!t.url);
       const duplicateIds = findDuplicateTabIds(closable);
       if (duplicateIds.length > 0) await chrome.tabs.remove(duplicateIds);
+      return;
+    }
+    case 'save-read-later': {
+      // Persisted here rather than in the content script so the item lands in
+      // the extension's own IndexedDB origin, where the popup can read it.
+      if (!message.url) return;
+      await saveForLater(
+        createIndexedDbReadLaterRepo(),
+        message.url,
+        message.title ?? message.url,
+        message.preview ?? 'No preview available for this page.',
+        Date.now(),
+        message.previewIsFallback ?? false,
+      );
       return;
     }
     case 'take-screenshot': {

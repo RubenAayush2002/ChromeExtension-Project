@@ -5,6 +5,7 @@ import { createIndexedDbTabSetRepo } from '@/db/tab-set-repo';
 import { saveForLater } from '@/lib/read-later-store';
 import { createIndexedDbReadLaterRepo } from '@/db/read-later-repo';
 import { extractFromTab } from '@/lib/page-extract-client';
+import { refreshReadLaterList } from './read-later-list';
 
 const tabSetRepo = createIndexedDbTabSetRepo();
 const readLaterRepo = createIndexedDbReadLaterRepo();
@@ -117,6 +118,13 @@ async function saveCurrentPageForLater() {
 
   await saveForLater(readLaterRepo, tab.url, tab.title ?? tab.url, preview, Date.now(), isFallback);
   showStatus('Saved for later.');
+  void renderReadLater();
+}
+
+function renderReadLater() {
+  return refreshReadLaterList(document, readLaterRepo, (item) => {
+    chrome.tabs.create({ url: item.url });
+  });
 }
 
 async function openReadingViewForActiveTab() {
@@ -133,3 +141,4 @@ document.getElementById('save-read-later')!.addEventListener('click', () => void
 document.getElementById('open-reading-view')!.addEventListener('click', () => void openReadingViewForActiveTab());
 
 void renderTabSets();
+void renderReadLater();

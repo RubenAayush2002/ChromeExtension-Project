@@ -1,8 +1,9 @@
 import { snapSide, clampOffset, getEdgeTabPosition, setEdgeTabPosition } from '@/lib/edge-tab-position';
 import { extractOpeningLines } from '@/lib/opening-lines';
 
-const TAB_HEIGHT = 220;
+const HANDLE_HEIGHT = 60; // must match .handle's height in STYLES
 const TAB_WIDTH = 40;
+const DRAG_THRESHOLD_PX = 4; // movement beyond this counts as a drag, not a click
 
 async function init() {
   if (window.top !== window) return; // only the top frame gets an edge tab
@@ -35,11 +36,12 @@ async function init() {
   const position = await getEdgeTabPosition(chrome.storage.local);
   applyPosition(host, tabEl, position);
 
+  const wasDragged = setupDrag(host, tabEl, handleEl);
+
   handleEl.addEventListener('click', () => {
+    if (wasDragged()) return; // the click that ends a drag shouldn't toggle
     panelEl.hidden = !panelEl.hidden;
   });
-
-  setupDrag(host, tabEl, handleEl);
 
   shadow.getElementById('panel')!.addEventListener('click', (e) => {
     const button = (e.target as HTMLElement).closest('button');
@@ -56,47 +58,62 @@ function applyPosition(host: HTMLElement, tabEl: HTMLElement, position: { side: 
   tabEl.classList.toggle('side-right', position.side === 'right');
 }
 
-function setupDrag(host: HTMLElement, tabEl: HTMLElement, handleEl: HTMLElement) {
-  let dragging = false;
+/** Sets up dragging, and returns a predicate telling the click handler whether
+ *  the gesture that just ended was a drag (so it shouldn't also toggle the
+ *  panel). pointerdown/pointerup and click both fire on the handle, so without
+ *  this every drag would also open or close the panel on release. */
+function setupDrag(host: HTMLElement, tabEl: HTMLElement, handleEl: HTMLElement): () => boolean {
+  let pointerDownY: number | null = null;
+  let didDrag = false;
 
   handleEl.addEventListener('pointerdown', (e) => {
-    dragging = true;
+    pointerDownY = e.clientY;
+    didDrag = false;
     handleEl.setPointerCapture(e.pointerId);
   });
 
   handleEl.addEventListener('pointermove', (e) => {
-    if (!dragging) return;
-    const offset = clampOffset(e.clientY - TAB_HEIGHT / 2, window.innerHeight, TAB_HEIGHT);
-    host.style.top = `${offset}px`;
+    if (pointerDownY === null) return;
+    if (!didDrag && Math.abs(e.clientY - pointerDownY) < DRAG_THRESHOLD_PX) return;
+
+    didDrag = true;
+    host.style.top = `${clampOffset(e.clientY - HANDLE_HEIGHT / 2, window.innerHeight, HANDLE_HEIGHT)}px`;
   });
 
   handleEl.addEventListener('pointerup', async (e) => {
-    if (!dragging) return;
-    dragging = false;
+    if (pointerDownY === null) return;
+    pointerDownY = null;
+    if (!didDrag) return; // a plain click — leave it to the panel toggle
 
-    const side = snapSide(e.clientX, window.innerWidth);
-    const offset = clampOffset(e.clientY - TAB_HEIGHT / 2, window.innerHeight, TAB_HEIGHT);
-    const position = { side, offset };
+    const position = {
+      side: snapSide(e.clientX, window.innerWidth),
+      offset: clampOffset(e.clientY - HANDLE_HEIGHT / 2, window.innerHeight, HANDLE_HEIGHT),
+    };
 
     applyPosition(host, tabEl, position);
     await setEdgeTabPosition(chrome.storage.local, position);
   });
+
+  return () => didDrag;
 }
 
 async function handleAction(action: string) {
   switch (action) {
     case 'read-later': {
-      const { saveForLater } = await import('@/lib/read-later-store');
-      const { createIndexedDbReadLaterRepo } = await import('@/db/read-later-repo');
-      const preview = extractOpeningLines(document) ?? 'No preview available for this page.';
-      await saveForLater(
-        createIndexedDbReadLaterRepo(),
-        window.location.href,
-        document.title,
-        preview,
-        Date.now(),
-        !extractOpeningLines(document),
-      );
+      // The preview must be extracted here (only the content script can see
+      // the live DOM), but persistence has to happen in the service worker:
+      // an IndexedDB opened from a content script belongs to the *host page's*
+      // origin, so items saved here would be invisible to the extension's own
+      // pages. Static import + sendMessage — a dynamic import() in this IIFE
+      // bundle would resolve against the page's origin and throw.
+      const extracted = extractOpeningLines(document);
+      chrome.runtime.sendMessage({
+        type: 'save-read-later',
+        url: window.location.href,
+        title: document.title,
+        preview: extracted ?? 'No preview available for this page.',
+        previewIsFallback: extracted === null,
+      });
       break;
     }
     case 'reading-view': {
@@ -145,6 +162,12 @@ const STYLES = `
     font-size: 16px;
     touch-action: none;
     user-select: none;
+  }
+  /* Beats the UA stylesheet's [hidden] { display: none } at equal specificity,
+     so the panel would stay open forever without this. Same class of bug as
+     the new tab page's Focus Mode overlay. */
+  .panel[hidden] {
+    display: none;
   }
   .panel {
     display: flex;
