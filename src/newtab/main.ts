@@ -1,7 +1,5 @@
 import { greetingText } from '@/lib/greeting';
 import { getFocus, setFocus } from '@/lib/focus-store';
-import { splitTaskBlob } from '@/lib/task-split';
-import { addTask, toggleTaskDone, type Task } from '@/lib/task-store';
 import { createIndexedDbTaskRepo } from '@/db/task-repo';
 import { buildSuggestions, moveSelection, type SearchSuggestion } from '@/lib/instant-search';
 import { fetchWeather, formatLastUpdated } from '@/lib/weather-store';
@@ -11,6 +9,8 @@ import { getBackgroundSettings } from '@/lib/background-store';
 import { applyBackground } from './background-renderer';
 import { getTheme, applyTheme } from './theme';
 import { getSettings } from './settings';
+import { initFocusModeOverlay } from './focus-mode-overlay';
+import { initTasksBox } from './tasks-box';
 
 const taskRepo = createIndexedDbTaskRepo();
 
@@ -49,75 +49,6 @@ async function initFocus() {
   });
 }
 
-function renderTaskList(tasks: Task[]) {
-  const box = document.getElementById('tasks-box')!;
-  const list = document.getElementById('task-list')!;
-  list.innerHTML = '';
-
-  if (tasks.length === 0) {
-    box.hidden = true;
-    return;
-  }
-  box.hidden = false;
-
-  for (const task of tasks.sort((a, b) => a.createdAt - b.createdAt)) {
-    const li = document.createElement('li');
-    li.className = task.done ? 'done' : '';
-
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.checked = task.done;
-    checkbox.addEventListener('change', async () => {
-      await toggleTaskDone(taskRepo, task.id, Date.now());
-      renderTaskList(await taskRepo.all());
-    });
-
-    const text = document.createElement('span');
-    text.className = 'task-text';
-    text.textContent = task.text;
-
-    li.append(checkbox, text);
-    list.append(li);
-  }
-}
-
-async function initTasks() {
-  renderTaskList(await taskRepo.all());
-
-  const input = document.getElementById('task-input') as HTMLInputElement;
-  const splitAction = document.getElementById('split-blob-action')!;
-  const splitButton = document.getElementById('split-blob-button') as HTMLButtonElement;
-  let pendingBlobLines: string[] = [];
-
-  input.addEventListener('paste', (event) => {
-    const text = event.clipboardData?.getData('text') ?? '';
-    const lines = splitTaskBlob(text);
-    if (lines.length > 1) {
-      event.preventDefault();
-      pendingBlobLines = lines;
-      splitButton.textContent = `Split into ${lines.length} tasks`;
-      splitAction.hidden = false;
-    }
-  });
-
-  splitButton.addEventListener('click', async () => {
-    for (const line of pendingBlobLines) {
-      await addTask(taskRepo, line, Date.now());
-    }
-    pendingBlobLines = [];
-    splitAction.hidden = true;
-    input.value = '';
-    renderTaskList(await taskRepo.all());
-  });
-
-  input.addEventListener('keydown', async (event) => {
-    if (event.key === 'Enter' && input.value.trim()) {
-      await addTask(taskRepo, input.value.trim(), Date.now());
-      input.value = '';
-      renderTaskList(await taskRepo.all());
-    }
-  });
-}
 
 async function initSearch() {
   const input = document.getElementById('search-input') as HTMLInputElement;
@@ -281,10 +212,15 @@ async function main() {
   const theme = await getTheme();
   applyTheme(theme);
 
+  const focusModeActive = await initFocusModeOverlay(document, chrome.storage.local, taskRepo, () =>
+    window.location.reload(),
+  );
+  if (focusModeActive) return;
+
   await Promise.all([
     initGreetingAndClock(),
     initFocus(),
-    initTasks(),
+    initTasksBox(document, taskRepo),
     initSearch(),
     initWeather(),
     initBackground(),

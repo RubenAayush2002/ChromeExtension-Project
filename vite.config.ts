@@ -32,6 +32,11 @@ export default defineConfig({
   build: {
     outDir,
     emptyOutDir: true,
+    // The modulepreload polyfill targets browsers without native ESM
+    // support — irrelevant inside a Chrome extension (MV3 requires modern
+    // Chrome) and its <link rel="modulepreload"> tags trigger a benign but
+    // noisy "cross-world extension resource mismatch" console warning here.
+    modulePreload: false,
     rollupOptions: {
       input: {
         newtab: resolve(root, 'newtab/index.html'),
@@ -40,6 +45,8 @@ export default defineConfig({
         popup: resolve(root, 'popup/index.html'),
         bookmarksPanel: resolve(root, 'bookmarks-panel/index.html'),
         readingView: resolve(root, 'reading-view/index.html'),
+        blocked: resolve(root, 'blocked/index.html'),
+        screenshot: resolve(root, 'screenshot/index.html'),
       },
       output: {
         entryFileNames: (chunk) => (chunk.name === 'background' ? 'background/index.js' : 'assets/[name]-[hash].js'),

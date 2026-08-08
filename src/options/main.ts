@@ -1,6 +1,8 @@
 import { getSettings, setSettings } from '@/newtab/settings';
 import { getTheme, setTheme } from '@/newtab/theme';
 import { getBackgroundSettings, setBackgroundSettings } from '@/lib/background-store';
+import { getTabLimitThreshold, setTabLimitThreshold } from '@/lib/tab-limit-settings';
+import { getFocusModeState, setFocusModeActive, setBlocklist } from '@/lib/focus-mode-store';
 
 const WEATHER_KEY = 'weather';
 
@@ -28,11 +30,13 @@ function el<T extends HTMLElement>(id: string): T {
 }
 
 async function loadForm() {
-  const [settings, theme, background, weather] = await Promise.all([
+  const [settings, theme, background, weather, tabLimit, focusMode] = await Promise.all([
     getSettings(),
     getTheme(),
     getBackgroundSettings(chrome.storage.local),
     getWeatherSettings(),
+    getTabLimitThreshold(chrome.storage.local),
+    getFocusModeState(chrome.storage.local),
   ]);
 
   el<HTMLInputElement>('name').value = settings.name;
@@ -46,6 +50,11 @@ async function loadForm() {
   el<HTMLInputElement>('weather-city').value = weather.city;
   el<HTMLInputElement>('weather-api-key').value = weather.apiKey;
   el<HTMLInputElement>('weather-matched-scenery').checked = background.mode === 'weatherMatched';
+
+  el<HTMLInputElement>('tab-limit').value = String(tabLimit);
+
+  el<HTMLInputElement>('focus-mode-active').checked = focusMode.active;
+  el<HTMLTextAreaElement>('focus-blocklist').value = focusMode.blocklist.join('\n');
 
   updateVisibility();
 }
@@ -92,6 +101,18 @@ async function save() {
       await setBackgroundSettings(chrome.storage.local, { mode: 'gradient', selectedId: null });
     }
   }
+
+  const tabLimit = Number(el<HTMLInputElement>('tab-limit').value);
+  if (tabLimit > 0) {
+    await setTabLimitThreshold(chrome.storage.local, tabLimit);
+  }
+
+  const blocklist = el<HTMLTextAreaElement>('focus-blocklist')
+    .value.split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+  await setBlocklist(chrome.storage.local, blocklist);
+  await setFocusModeActive(chrome.storage.local, el<HTMLInputElement>('focus-mode-active').checked);
 
   const status = el<HTMLParagraphElement>('save-status');
   status.hidden = false;

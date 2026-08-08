@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Blocked while Focus Mode is on</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <main class="blocked">
+    <h1>Blocked while Focus Mode is on</h1>
+    <p id="host" class="host"></p>
+
+    <section class="focus-summary">
+      <p id="focus-text" class="focus-text"></p>
+      <p id="progress" class="progress"></p>
+    </section>
+
+    <div class="actions">
+      <button id="allow-5min">Allow for 5 minutes</button>
+      <button id="turn-off-focus" class="secondary">Turn off Focus Mode</button>
+    </div>
+  </main>
+
+  <script type="module" src="./main.ts"></script>
+</body>
+</html>

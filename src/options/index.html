@@ -72,6 +72,26 @@
       </label>
     </section>
 
+    <section>
+      <h2>Too many tabs</h2>
+      <label>
+        Notify me when I have this many tabs open
+        <input id="tab-limit" type="number" min="1" />
+      </label>
+    </section>
+
+    <section>
+      <h2>Focus Mode</h2>
+      <label class="checkbox-label">
+        <input id="focus-mode-active" type="checkbox" />
+        Focus Mode is on
+      </label>
+      <label>
+        Blocked sites (one hostname per line, e.g. twitter.com)
+        <textarea id="focus-blocklist" rows="4" placeholder="twitter.com&#10;reddit.com"></textarea>
+      </label>
+    </section>
+
     <button id="save-button" type="button">Save</button>
     <p id="save-status" class="save-status" hidden></p>
   </main>

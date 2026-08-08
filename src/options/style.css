@@ -44,11 +44,13 @@ label {
 input[type='text'],
 input[type='password'],
 input[type='number'],
-select {
+select,
+textarea {
   padding: 8px 10px;
   border-radius: 8px;
   border: 1px solid rgba(128, 128, 128, 0.3);
   font-size: 14px;
+  font-family: inherit;
 }
 
 #save-button {

@@ -53,6 +53,14 @@ html, body {
   gap: 16px;
 }
 
+/* A class selector's `display` beats the [hidden] attribute's UA-stylesheet
+   `display: none` at equal specificity — without this, #page stays visible
+   (and clickable) on top of the Focus Mode overlay even when JS sets
+   `.hidden = true` on it. */
+.page[hidden] {
+  display: none;
+}
+
 .top-row {
   display: flex;
   justify-content: space-between;
@@ -251,6 +259,10 @@ html, body {
   overflow-x: auto;
 }
 
+.recently-closed[hidden] {
+  display: none;
+}
+
 .recently-closed-list {
   display: flex;
   gap: 10px;
@@ -268,4 +280,53 @@ html, body {
   cursor: pointer;
   font-size: 12px;
   white-space: nowrap;
+}
+
+/* Same [hidden] guard as .page above: this rule's `display: flex` would
+   otherwise beat the UA stylesheet's `[hidden] { display: none }` at equal
+   specificity, leaving the overlay permanently laid out. While Focus Mode is
+   off that means an invisible full-viewport layer at z-index 10 sitting over
+   the whole page and swallowing every click. */
+.focus-mode-overlay[hidden] {
+  display: none;
+}
+
+.focus-mode-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(4px);
+  color: white;
+}
+
+.focus-mode-text {
+  font-size: clamp(28px, 5vw, 48px);
+  font-weight: 600;
+  margin: 0;
+  max-width: 80vw;
+}
+
+.focus-mode-progress {
+  margin: 0;
+  font-size: 15px;
+  opacity: 0.85;
+}
+
+.focus-mode-off {
+  margin-top: 12px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: transparent;
+  color: white;
+  font-size: 13px;
+  cursor: pointer;
 }

@@ -34,10 +34,18 @@
     "sessions",
     "notifications",
     "scripting",
-    "activeTab"
+    "activeTab",
+    "webNavigation"
   ],
   "host_permissions": [
     "https://api.openweathermap.org/*",
     "<all_urls>"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content/edge-tab.js"],
+      "run_at": "document_idle"
+    }
   ]
 }

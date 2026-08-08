@@ -3,8 +3,31 @@ import { TASK_PURGE_ALARM, purgeOldCompletedTasks } from '@/lib/task-store';
 import { createIndexedDbTaskRepo } from '@/db/task-repo';
 import { shouldNotify, recordNotified, recordBelowThreshold } from '@/lib/tab-limit-nudge';
 import { getTabLimitThreshold, getNudgeState, setNudgeState } from '@/lib/tab-limit-settings';
+import { getFocusModeState, shouldBlockNavigation, pruneExpiredPasses } from '@/lib/focus-mode-store';
+import { extractHostname } from '@/lib/url-normalize';
+import { fetchWeather } from '@/lib/weather-store';
+import { fetchWeatherFromOpenWeatherMap } from '@/newtab/weather-fetcher';
+import { planTabGroupsByHostname } from '@/lib/tab-tidy';
+import { findDuplicateTabIds } from '@/lib/duplicate-tabs';
 
 const WEATHER_REFRESH_ALARM = 'weather-refresh';
+const FOCUS_MODE_PASS_SWEEP_ALARM = 'focus-mode-pass-sweep';
+
+async function checkFocusModeNavigation(tabId: number, url: string) {
+  const hostname = extractHostname(url);
+  if (!hostname) return;
+
+  const state = await getFocusModeState(chrome.storage.local);
+  if (!shouldBlockNavigation(state, hostname, Date.now())) return;
+
+  const blockedPageUrl = chrome.runtime.getURL(`blocked/index.html?url=${encodeURIComponent(url)}`);
+  await chrome.tabs.update(tabId, { url: blockedPageUrl });
+}
+
+chrome.webNavigation.onBeforeNavigate.addListener((details) => {
+  if (details.frameId !== 0) return; // only top-level frame navigations
+  void checkFocusModeNavigation(details.tabId, details.url);
+});
 
 async function checkTabLimitNudge() {
   const [tabs, threshold, state] = await Promise.all([
@@ -49,6 +72,7 @@ chrome.runtime.onInstalled.addListener(() => {
   });
   chrome.alarms.create(TASK_PURGE_ALARM, { periodInMinutes: 24 * 60 });
   chrome.alarms.create(WEATHER_REFRESH_ALARM, { periodInMinutes: 5 });
+  chrome.alarms.create(FOCUS_MODE_PASS_SWEEP_ALARM, { periodInMinutes: 5 });
 });
 
 chrome.alarms.onAlarm.addListener(async (alarm) => {
@@ -67,8 +91,60 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     // The new tab page fetches weather on open; this alarm exists so a
     // long-lived tab (or the next new tab) always sees a reasonably fresh
     // cached reading rather than one from hours ago.
-    const { fetchWeather } = await import('@/lib/weather-store');
-    const { fetchWeatherFromOpenWeatherMap } = await import('@/newtab/weather-fetcher');
     await fetchWeather(chrome.storage.local, fetchWeatherFromOpenWeatherMap);
   }
+
+  if (alarm.name === FOCUS_MODE_PASS_SWEEP_ALARM) {
+    await pruneExpiredPasses(chrome.storage.local, now.getTime());
+  }
+});
+
+interface EdgeTabMessage {
+  type: 'open-reading-view' | 'bookmark-page' | 'tidy-tabs' | 'close-duplicates' | 'take-screenshot';
+  title?: string;
+  url?: string;
+}
+
+async function handleEdgeTabMessage(message: EdgeTabMessage, senderTabId: number | undefined) {
+  switch (message.type) {
+    case 'open-reading-view': {
+      if (!senderTabId) return;
+      await chrome.tabs.create({ url: chrome.runtime.getURL(`reading-view/index.html?tabId=${senderTabId}`) });
+      return;
+    }
+    case 'bookmark-page': {
+      if (!message.url) return;
+      await chrome.bookmarks.create({ title: message.title ?? message.url, url: message.url });
+      return;
+    }
+    case 'tidy-tabs': {
+      const tabs = await chrome.tabs.query({ currentWindow: true });
+      const tidyable = tabs.filter((t): t is chrome.tabs.Tab & { id: number; url: string } => !!t.id && !!t.url);
+      const plans = planTabGroupsByHostname(tidyable);
+      for (const plan of plans) {
+        const groupId = await chrome.tabs.group({ tabIds: plan.tabIds });
+        await chrome.tabGroups.update(groupId, { title: plan.hostname, color: plan.color });
+      }
+      return;
+    }
+    case 'close-duplicates': {
+      const tabs = await chrome.tabs.query({ currentWindow: true });
+      const closable = tabs.filter((t): t is chrome.tabs.Tab & { id: number; url: string } => !!t.id && !!t.url);
+      const duplicateIds = findDuplicateTabIds(closable);
+      if (duplicateIds.length > 0) await chrome.tabs.remove(duplicateIds);
+      return;
+    }
+    case 'take-screenshot': {
+      if (!senderTabId) return;
+      const tab = await chrome.tabs.get(senderTabId);
+      const dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, { format: 'png' });
+      await chrome.storage.local.set({ pendingScreenshot: dataUrl });
+      await chrome.tabs.create({ url: chrome.runtime.getURL('screenshot/index.html') });
+      return;
+    }
+  }
+}
+
+chrome.runtime.onMessage.addListener((message: EdgeTabMessage, sender) => {
+  void handleEdgeTabMessage(message, sender.tab?.id);
 });

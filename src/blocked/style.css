@@ -1,0 +1,69 @@
+:root {
+  color-scheme: light dark;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.blocked {
+  max-width: 440px;
+  text-align: center;
+  padding: 32px;
+}
+
+h1 {
+  font-size: 22px;
+  margin-bottom: 4px;
+}
+
+.host {
+  opacity: 0.6;
+  font-size: 14px;
+  margin-top: 0;
+}
+
+.focus-summary {
+  margin: 28px 0;
+  padding: 20px;
+  border-radius: 14px;
+  background: rgba(128, 128, 128, 0.08);
+}
+
+.focus-text {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.progress {
+  margin: 0;
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.actions button {
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(128, 128, 128, 0.3);
+  background: #6d83f2;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.actions button.secondary {
+  background: transparent;
+  color: inherit;
+}

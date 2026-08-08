@@ -8,7 +8,13 @@
 <body>
   <div id="background-layer"></div>
 
-  <div class="page">
+  <div id="focus-mode-overlay" class="focus-mode-overlay" hidden>
+    <p id="focus-mode-text" class="focus-mode-text"></p>
+    <p id="focus-mode-progress" class="focus-mode-progress"></p>
+    <button id="focus-mode-off" class="focus-mode-off">Turn off Focus Mode</button>
+  </div>
+
+  <div id="page" class="page">
     <header class="top-row">
       <div class="greeting-block">
         <h1 id="greeting"></h1>
@@ -31,7 +37,7 @@
       <input id="focus-input" class="focus-bar" type="text" placeholder="Today's Focus" autocomplete="off" />
     </main>
 
-    <aside id="tasks-box" class="tasks-box" hidden>
+    <aside id="tasks-box" class="tasks-box">
       <h2>Today's Tasks</h2>
       <input id="task-input" class="task-input" type="text" placeholder="Add a task and press Enter" autocomplete="off" />
       <div id="split-blob-action" class="split-blob-action" hidden>
