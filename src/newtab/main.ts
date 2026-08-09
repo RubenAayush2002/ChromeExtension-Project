@@ -11,6 +11,8 @@ import { getTheme, applyTheme } from './theme';
 import { getSettings } from './settings';
 import { initFocusModeOverlay } from './focus-mode-overlay';
 import { initTasksBox } from './tasks-box';
+import { splitTaskBlobSmart } from '@/lib/smart-task-split';
+import { createGroqProvider } from '@/lib/groq-provider';
 
 const taskRepo = createIndexedDbTaskRepo();
 
@@ -220,7 +222,9 @@ async function main() {
   await Promise.all([
     initGreetingAndClock(),
     initFocus(),
-    initTasksBox(document, taskRepo),
+    initTasksBox(document, taskRepo, Date.now, (raw) =>
+      splitTaskBlobSmart(chrome.storage.local, createGroqProvider(), raw),
+    ),
     initSearch(),
     initWeather(),
     initBackground(),

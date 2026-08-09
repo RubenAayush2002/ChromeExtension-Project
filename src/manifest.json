@@ -39,6 +39,7 @@
   ],
   "host_permissions": [
     "https://api.openweathermap.org/*",
+    "https://api.groq.com/*",
     "<all_urls>"
   ],
   "content_scripts": [

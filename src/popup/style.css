@@ -155,3 +155,33 @@ body {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+.ask-tabs {
+  margin-top: 8px;
+}
+
+.ask-tabs h2 {
+  font-size: 12px;
+  opacity: 0.6;
+  margin: 4px 0;
+}
+
+.ask-tabs-input {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(128, 128, 128, 0.3);
+  background: transparent;
+  color: inherit;
+  font-size: 12px;
+}
+
+/* Toggled via [hidden] — must not declare `display` here. */
+.ask-tabs-answer {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  max-height: 200px;
+  overflow-y: auto;
+}

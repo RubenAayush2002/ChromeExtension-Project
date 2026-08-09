@@ -330,3 +330,11 @@ html, body {
   font-size: 13px;
   cursor: pointer;
 }
+
+/* Toggled via [hidden] — must not declare `display` here. */
+.tasks-note {
+  margin: 6px 0 0;
+  font-size: 11px;
+  opacity: 0.75;
+  line-height: 1.4;
+}

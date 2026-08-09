@@ -1,11 +1,12 @@
 const DB_NAME = 'personal-home-base';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 export const STORES = {
   tasks: 'tasks',
   tabSets: 'savedTabSets',
   bookmarkMeta: 'bookmarkMeta',
   readLater: 'readLater',
+  wordLookupCache: 'wordLookupCache',
 } as const;
 
 let dbPromise: Promise<IDBDatabase> | null = null;
@@ -23,7 +24,12 @@ export function openDb(): Promise<IDBDatabase> {
       const db = request.result;
       for (const storeName of Object.values(STORES)) {
         if (!db.objectStoreNames.contains(storeName)) {
-          const keyPath = storeName === STORES.bookmarkMeta ? 'bookmarkId' : 'id';
+          const keyPath =
+            storeName === STORES.bookmarkMeta
+              ? 'bookmarkId'
+              : storeName === STORES.wordLookupCache
+                ? 'word'
+                : 'id';
           db.createObjectStore(storeName, { keyPath });
         }
       }

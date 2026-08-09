@@ -92,6 +92,37 @@
       </label>
     </section>
 
+    <section>
+      <h2>Smart Layer</h2>
+
+      <details id="smart-walkthrough" class="walkthrough">
+        <summary>How do I get a key?</summary>
+        <ol>
+          <li>Go to <a href="https://console.groq.com/keys" target="_blank" rel="noreferrer">console.groq.com/keys</a>.</li>
+          <li>Sign in and choose <strong>Create API Key</strong>.</li>
+          <li>Copy the key — it's only shown once.</li>
+          <li>Paste it below and press <strong>Test key</strong>.</li>
+        </ol>
+      </details>
+
+      <label>
+        Groq API key
+        <input id="groq-api-key" type="password" placeholder="Enter your API key" autocomplete="off" />
+      </label>
+      <p id="groq-key-masked" class="key-masked" hidden></p>
+
+      <div class="key-actions">
+        <button id="test-groq-key" type="button">Test key</button>
+        <span id="groq-key-status" class="key-status" hidden></span>
+      </div>
+
+      <label class="checkbox-label">
+        <input id="smart-layer-enabled" type="checkbox" />
+        Smart Layer: on
+      </label>
+      <p id="smart-layer-note" class="field-note" hidden></p>
+    </section>
+
     <button id="save-button" type="button">Save</button>
     <p id="save-status" class="save-status" hidden></p>
   </main>

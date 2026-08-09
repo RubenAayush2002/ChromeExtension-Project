@@ -11,6 +11,17 @@ import { planTabGroupsByHostname } from '@/lib/tab-tidy';
 import { findDuplicateTabIds } from '@/lib/duplicate-tabs';
 import { saveForLater } from '@/lib/read-later-store';
 import { createIndexedDbReadLaterRepo } from '@/db/read-later-repo';
+import { createGroqProvider } from '@/lib/groq-provider';
+import { createIndexedDbWordLookupCache } from '@/db/word-lookup-repo';
+import { extractFromTab } from '@/lib/page-extract-client';
+import type { AiOnlyResult } from '@/lib/smart-call';
+import {
+  explainText,
+  explainTextSimpler,
+  lookupWord,
+  askAcrossTabs,
+  type TabContent,
+} from '@/lib/ai-only-features';
 
 const WEATHER_REFRESH_ALARM = 'weather-refresh';
 const FOCUS_MODE_PASS_SWEEP_ALARM = 'focus-mode-pass-sweep';
@@ -174,6 +185,133 @@ async function handleEdgeTabMessage(message: EdgeTabMessage, senderTabId: number
   }
 }
 
+const EDGE_TAB_MESSAGE_TYPES = new Set<string>([
+  'open-reading-view',
+  'bookmark-page',
+  'tidy-tabs',
+  'close-duplicates',
+  'take-screenshot',
+  'save-read-later',
+]);
+
+// Chrome dispatches every message to every listener. This one must ignore
+// anything that isn't its own and return false: returning undefined for an
+// AI message would signal "not responding asynchronously" and can close the
+// channel before the AI listener below calls sendResponse — leaving the
+// caller's sendMessage promise pending forever.
 chrome.runtime.onMessage.addListener((message: EdgeTabMessage, sender) => {
+  if (!EDGE_TAB_MESSAGE_TYPES.has(message.type)) return false;
+
   void handleEdgeTabMessage(message, sender.tab?.id);
+  return false;
+});
+
+interface AiMessage {
+  type: 'ai-explain' | 'ai-explain-simpler' | 'ai-word-lookup' | 'ai-ask-tabs';
+  text?: string;
+  previous?: string;
+  word?: string;
+  sentence?: string;
+  question?: string;
+}
+
+const AI_MESSAGE_TYPES = new Set<string>([
+  'ai-explain',
+  'ai-explain-simpler',
+  'ai-word-lookup',
+  'ai-ask-tabs',
+]);
+
+/** The §10.3 features run here rather than in the content script so the API
+ *  key is never read into a page-hosted context. Returns the AiOnlyResult
+ *  shape, which already distinguishes "layer is off" from "call failed". */
+async function handleAiMessage(message: AiMessage): Promise<AiOnlyResult> {
+  const provider = createGroqProvider();
+
+  switch (message.type) {
+    case 'ai-explain':
+      return explainText(chrome.storage.local, provider, message.text ?? '');
+
+    case 'ai-explain-simpler':
+      return explainTextSimpler(chrome.storage.local, provider, message.text ?? '', message.previous ?? '');
+
+    case 'ai-word-lookup':
+      return lookupWord(
+        chrome.storage.local,
+        provider,
+        createIndexedDbWordLookupCache(),
+        message.word ?? '',
+        message.sentence ?? '',
+      );
+
+    case 'ai-ask-tabs':
+      return askAcrossTabsFromOpenTabs(provider, message.question ?? '');
+  }
+}
+
+/** Flattens extracted article HTML to plain text.
+ *
+ *  Regex rather than DOMParser: service workers have no DOM, so the popup's
+ *  DOMParser-based version can't be reused here. Scripts and styles are
+ *  dropped first so their contents don't leak into the text. */
+function articlePlainText(contentHtml: string | undefined): string {
+  if (!contentHtml) return '';
+  return contentHtml
+    .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/** Gathers text from every readable open tab, then asks the question across
+ *  them. Tabs that can't be scripted (chrome:// pages, the web store) are
+ *  skipped rather than failing the whole request. */
+async function askAcrossTabsFromOpenTabs(
+  provider: ReturnType<typeof createGroqProvider>,
+  question: string,
+): Promise<AiOnlyResult> {
+  const tabs = await chrome.tabs.query({ currentWindow: true });
+  const contents: TabContent[] = [];
+
+  for (const tab of tabs) {
+    if (!tab.id || !tab.url?.startsWith('http')) continue;
+    try {
+      const extracted = await extractFromTab(tab.id);
+      // Prefer the full article body — openingLines is just the first
+      // paragraph, which is far too thin to answer questions from, and is
+      // null on pages without a clear <p>. Fall back to the title so a tab
+      // is still represented rather than silently dropped.
+      const text =
+        articlePlainText(extracted?.article?.contentHtml) ||
+        extracted?.openingLines ||
+        tab.title ||
+        '';
+      if (text) contents.push({ title: tab.title ?? tab.url, url: tab.url, text });
+    } catch {
+      // Unscriptable tab — skip it and keep going.
+    }
+  }
+
+  return askAcrossTabs(chrome.storage.local, provider, question, contents);
+}
+
+// Separate listener from the edge-tab one above: these need to send a response
+// back, which requires returning true to keep the channel open.
+chrome.runtime.onMessage.addListener((message: AiMessage, _sender, sendResponse) => {
+  if (!AI_MESSAGE_TYPES.has(message.type)) return false;
+
+  handleAiMessage(message).then(sendResponse, (error: unknown) =>
+    sendResponse({
+      ok: false,
+      reason: 'failed',
+      message: error instanceof Error ? error.message : "Couldn't complete this right now.",
+    }),
+  );
+  return true;
 });

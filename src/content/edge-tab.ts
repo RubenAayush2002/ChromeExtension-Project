@@ -1,5 +1,6 @@
 import { snapSide, clampOffset, getEdgeTabPosition, setEdgeTabPosition } from '@/lib/edge-tab-position';
 import { extractOpeningLines } from '@/lib/opening-lines';
+import { initAiInlineFeatures } from './ai-inline';
 
 const HANDLE_HEIGHT = 60; // must match .handle's height in STYLES
 const TAB_WIDTH = 40;
@@ -192,3 +193,4 @@ const STYLES = `
 `;
 
 void init();
+initAiInlineFeatures();

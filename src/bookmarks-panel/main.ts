@@ -1,5 +1,7 @@
 import { labelForUrl } from '@/lib/bookmark-labels';
 import { keywordSearchBookmarks } from '@/lib/bookmark-search';
+import { labelBookmarksSmart, searchBookmarksSmart } from '@/lib/smart-bookmarks';
+import { createGroqProvider } from '@/lib/groq-provider';
 import { applyOrderAndLabels, reorder, type OrderableBookmark, type OrderedBookmark } from '@/lib/bookmark-order';
 import { createIndexedDbBookmarkMetaRepo } from '@/db/bookmark-meta-repo';
 
@@ -18,6 +20,21 @@ interface FolderGroup {
 const metaRepo = createIndexedDbBookmarkMetaRepo();
 const foldersEl = document.getElementById('folders')!;
 const searchEl = document.getElementById('search') as HTMLInputElement;
+
+/** Ids returned by a natural-language search, or null when showing the plain
+ *  keyword filter. Cleared as soon as the query text changes. */
+let smartMatchIds: Set<string> | null = null;
+
+/** §10.4: short, non-blocking note about a smart-layer fallback. */
+function showPanelNote(note: string) {
+  const el = document.getElementById('panel-note')!;
+  el.hidden = false;
+  el.textContent = note;
+  setTimeout(() => {
+    el.hidden = true;
+    el.textContent = '';
+  }, 4000);
+}
 
 let allGroups: FolderGroup[] = [];
 
@@ -47,23 +64,33 @@ async function loadAndRender() {
   const rawGroups = flattenBookmarkTree(tree);
   const meta = await metaRepo.all();
 
+  // Same label field, smarter values when the layer is on (§10.2): real topic
+  // labels instead of hostnames, falling back per-bookmark on any failure.
+  const allBookmarks = rawGroups.flatMap((g) => g.bookmarks);
+  const labelResult = await labelBookmarksSmart(chrome.storage.local, createGroqProvider(), allBookmarks);
+  const labelFor = (url: string, id: string) => labelResult.value.get(id) ?? labelForUrl(url);
+
   allGroups = rawGroups.map((group) => {
     const groupMeta = meta.filter((m) => group.bookmarks.some((b) => b.id === m.bookmarkId));
     return {
       folderId: group.folderId,
       folderTitle: group.folderTitle,
-      bookmarks: applyOrderAndLabels(group.bookmarks, groupMeta, (b) => labelForUrl(b.url)),
+      bookmarks: applyOrderAndLabels(group.bookmarks, groupMeta, (b) => labelFor(b.url, b.id)),
     };
   });
 
   render(searchEl.value);
+  if (labelResult.note) showPanelNote(labelResult.note);
 }
 
 function render(query: string) {
   foldersEl.innerHTML = '';
 
   for (const group of allGroups) {
-    const filtered = keywordSearchBookmarks(query, group.bookmarks);
+    // A smart search result replaces the keyword filter until the query changes.
+    const filtered = smartMatchIds
+      ? group.bookmarks.filter((b) => smartMatchIds!.has(b.id))
+      : keywordSearchBookmarks(query, group.bookmarks);
     if (filtered.length === 0) continue;
 
     const section = document.createElement('div');
@@ -145,7 +172,26 @@ function escapeHtml(text: string): string {
   return div.innerHTML;
 }
 
-searchEl.addEventListener('input', () => render(searchEl.value));
+// Typing keeps the instant keyword filter — firing an API call per keystroke
+// would be slow and wasteful. Enter runs the natural-language search (§10.2)
+// against the same box.
+searchEl.addEventListener('input', () => {
+  smartMatchIds = null;
+  render(searchEl.value);
+});
+
+searchEl.addEventListener('keydown', async (event) => {
+  if (event.key !== 'Enter' || !searchEl.value.trim()) return;
+
+  const all = allGroups.flatMap((g) => g.bookmarks);
+  const result = await searchBookmarksSmart(chrome.storage.local, createGroqProvider(), searchEl.value, all);
+
+  // Only narrow to smart matches when the smart path actually ran; a fallback
+  // result is just the keyword filter we're already showing.
+  smartMatchIds = result.usedSmart ? new Set(result.value.map((b) => b.id)) : null;
+  render(searchEl.value);
+  if (result.note) showPanelNote(result.note);
+});
 
 for (const event of ['onCreated', 'onRemoved', 'onChanged', 'onMoved'] as const) {
   chrome.bookmarks[event].addListener(() => void loadAndRender());

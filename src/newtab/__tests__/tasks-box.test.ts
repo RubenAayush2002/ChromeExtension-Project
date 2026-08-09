@@ -23,10 +23,20 @@ function renderTasksBoxDom(): Document {
       <div id="split-blob-action" hidden>
         <button id="split-blob-button"></button>
       </div>
+      <p id="tasks-note" hidden></p>
       <ul id="task-list"></ul>
     </aside>
   `;
   return document;
+}
+
+/** jsdom has no DataTransfer, so the clipboard payload is stubbed directly. */
+function pasteInto(input: HTMLInputElement, text: string) {
+  const event = new Event('paste', { bubbles: true, cancelable: true });
+  Object.defineProperty(event, 'clipboardData', {
+    value: { getData: (type: string) => (type === 'text' ? text : '') },
+  });
+  input.dispatchEvent(event);
 }
 
 function pressEnter(input: HTMLInputElement) {
@@ -117,6 +127,47 @@ describe('initTasksBox', () => {
     await settle();
 
     expect(await repo.all()).toEqual([]);
+  });
+
+  it('adds the smart-split tasks when the split button is used', async () => {
+    const doc = renderTasksBoxDom();
+    const repo = createInMemoryTaskRepo();
+
+    // Stands in for the smart layer returning cleaned-up wording.
+    await initTasksBox(doc, repo, Date.now, async () => ({
+      value: ['Buy milk', 'Call the dentist'],
+      usedSmart: true,
+      note: null,
+    }));
+
+    const input = doc.getElementById('task-input') as HTMLInputElement;
+    pasteInto(input, 'milk\ndentist');
+    (doc.getElementById('split-blob-button') as HTMLButtonElement).click();
+    await settle();
+
+    expect((await repo.all()).map((t) => t.text).sort()).toEqual(['Buy milk', 'Call the dentist']);
+  });
+
+  it('shows the fallback note and still adds the simple tasks when the smart call fails', async () => {
+    const doc = renderTasksBoxDom();
+    const repo = createInMemoryTaskRepo();
+
+    await initTasksBox(doc, repo, Date.now, async (_raw, simple) => ({
+      value: simple,
+      usedSmart: false,
+      note: "Couldn't reach the smart layer. Showed the simple version instead.",
+    }));
+
+    const input = doc.getElementById('task-input') as HTMLInputElement;
+    pasteInto(input, 'milk\ndentist');
+    (doc.getElementById('split-blob-button') as HTMLButtonElement).click();
+    await settle();
+
+    // §10.4: the feature completes with the simple result AND says so.
+    expect((await repo.all()).map((t) => t.text).sort()).toEqual(['dentist', 'milk']);
+    const note = doc.getElementById('tasks-note')!;
+    expect(note.hidden).toBe(false);
+    expect(note.textContent).toContain('simple version instead');
   });
 
   it('re-renders without dropping the input listener after a task is added', async () => {
