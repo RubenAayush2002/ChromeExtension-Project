@@ -120,3 +120,64 @@ textarea {
   padding-left: 20px;
   line-height: 1.7;
 }
+
+.swatch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+/* Toggled via [hidden]; the grid rule above would otherwise win at equal
+   specificity and keep the picker laid out while it should be hidden. */
+.swatch-grid[hidden],
+#photo-picker[hidden] {
+  display: none;
+}
+
+.swatch {
+  position: relative;
+}
+
+.swatch-preview {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-size: cover;
+  background-position: center;
+  cursor: pointer;
+  padding: 0;
+  display: block;
+}
+
+.swatch.selected .swatch-preview {
+  border-color: #4c8bf5;
+  box-shadow: 0 0 0 2px rgba(76, 139, 245, 0.35);
+}
+
+.swatch-delete {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.upload-label {
+  display: block;
+  margin-top: 8px;
+}
+
+.field-note.error {
+  color: #c0392b;
+  opacity: 1;
+}

@@ -67,17 +67,29 @@ html, body {
   align-items: flex-start;
 }
 
+/* The greeting sits directly on the background image, which can be dark or
+   light depending on the photo and time of day. Theme colors can't work here
+   — a dark --fg vanishes against a cloudy sky. White plus a soft dark shadow
+   stays legible over both: the shadow does the work on bright skies and sand,
+   the white on dark scenes. */
 .greeting-block h1 {
   margin: 0 0 4px;
   font-size: 28px;
   font-weight: 600;
+  color: #fff;
+  text-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.55),
+    0 2px 12px rgba(0, 0, 0, 0.35);
 }
 
 .datetime {
   display: flex;
   gap: 12px;
-  color: var(--muted);
   font-size: 14px;
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.55),
+    0 2px 10px rgba(0, 0, 0, 0.35);
 }
 
 .icon-button {
@@ -104,11 +116,14 @@ html, body {
   position: relative;
 }
 
+/* Width is unchanged; only the vertical padding grows. Text is centered in
+   both bars, which means the placeholder centers too. */
 .search-bar {
   width: 100%;
-  padding: 14px 18px;
+  padding: 22px 18px;
   font-size: 18px;
-  border-radius: 14px;
+  text-align: center;
+  border-radius: 16px;
   border: 1px solid var(--panel-border);
   background: var(--panel-bg);
   color: var(--fg);
@@ -117,9 +132,10 @@ html, body {
 
 .focus-bar {
   width: min(420px, 80vw);
-  padding: 8px 14px;
+  padding: 12px 14px;
   font-size: 14px;
-  border-radius: 10px;
+  text-align: center;
+  border-radius: 12px;
   border: 1px solid var(--panel-border);
   background: var(--panel-bg);
   color: var(--fg);
@@ -337,4 +353,96 @@ html, body {
   font-size: 11px;
   opacity: 0.75;
   line-height: 1.4;
+}
+
+/* [hidden] guard first: the class rule below sets `display: flex` and would
+   otherwise beat the UA stylesheet at equal specificity, leaving this overlay
+   permanently covering the page. */
+.onboarding[hidden] {
+  display: none;
+}
+
+.onboarding {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+}
+
+.onboarding-card {
+  width: min(420px, 100%);
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 16px;
+  padding: 28px;
+  backdrop-filter: blur(10px);
+  color: var(--fg);
+}
+
+.onboarding-card h1 {
+  margin: 0 0 6px;
+  font-size: 24px;
+}
+
+.onboarding-intro {
+  margin: 0 0 20px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.onboarding-card label {
+  display: block;
+  margin-bottom: 14px;
+  font-size: 13px;
+}
+
+.onboarding-card input,
+.onboarding-card select {
+  width: 100%;
+  margin-top: 6px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--panel-border);
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 14px;
+}
+
+.onboarding-card .optional {
+  color: var(--muted);
+}
+
+.onboarding-note {
+  margin: 0 0 18px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.onboarding-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.onboarding-actions button {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: #4c8bf5;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.onboarding-actions button.secondary {
+  flex: 0 0 auto;
+  padding: 10px 18px;
+  background: transparent;
+  color: var(--fg);
+  border-color: var(--panel-border);
 }

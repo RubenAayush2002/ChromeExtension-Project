@@ -8,6 +8,39 @@
 <body>
   <div id="background-layer"></div>
 
+  <div id="onboarding" class="onboarding" hidden>
+    <div class="onboarding-card">
+      <h1>Welcome</h1>
+      <p class="onboarding-intro">A calm home base for your browser. Everything stays on this device.</p>
+
+      <label>
+        What should I call you?
+        <input id="onboarding-name" type="text" placeholder="Your name" autocomplete="off" maxlength="40" />
+      </label>
+
+      <label>
+        Search engine
+        <select id="onboarding-engine">
+          <option value="google">Google</option>
+          <option value="duckduckgo">DuckDuckGo</option>
+          <option value="bing">Bing</option>
+        </select>
+      </label>
+
+      <label>
+        City for weather <span class="optional">(optional)</span>
+        <input id="onboarding-city" type="text" placeholder="e.g. Dublin,IE" autocomplete="off" />
+      </label>
+
+      <p class="onboarding-note">You can change all of this later in Settings.</p>
+
+      <div class="onboarding-actions">
+        <button id="onboarding-start" type="button">Get started</button>
+        <button id="onboarding-skip" type="button" class="secondary">Skip</button>
+      </div>
+    </div>
+  </div>
+
   <div id="focus-mode-overlay" class="focus-mode-overlay" hidden>
     <p id="focus-mode-text" class="focus-mode-text"></p>
     <p id="focus-mode-progress" class="focus-mode-progress"></p>

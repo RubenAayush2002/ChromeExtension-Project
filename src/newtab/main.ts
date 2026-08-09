@@ -8,13 +8,24 @@ import { fetchWeatherFromOpenWeatherMap } from './weather-fetcher';
 import { getBackgroundSettings } from '@/lib/background-store';
 import { applyBackground } from './background-renderer';
 import { getTheme, applyTheme } from './theme';
-import { getSettings } from './settings';
+import { getSettings, setSettings, type Settings } from './settings';
+import { initOnboarding } from './onboarding';
 import { initFocusModeOverlay } from './focus-mode-overlay';
 import { initTasksBox } from './tasks-box';
 import { splitTaskBlobSmart } from '@/lib/smart-task-split';
 import { createGroqProvider } from '@/lib/groq-provider';
 
 const taskRepo = createIndexedDbTaskRepo();
+
+/** Stores the onboarding city into the existing weather settings blob without
+ *  disturbing the API key or cached reading the options page also writes. */
+async function setWeatherCity(city: string): Promise<void> {
+  const { weather } = await chrome.storage.local.get('weather');
+  const existing = (weather as { city?: string; apiKey?: string; lastReading?: unknown } | undefined) ?? {};
+  await chrome.storage.local.set({
+    weather: { apiKey: '', lastReading: null, ...existing, city },
+  });
+}
 
 async function initGreetingAndClock() {
   const settings = await getSettings();
@@ -214,10 +225,35 @@ async function main() {
   const theme = await getTheme();
   applyTheme(theme);
 
+  // Before anything else: the greeting would otherwise paint a nameless
+  // "Good morning," behind the overlay on a fresh install.
+  const onboardingShown = await initOnboarding(document, chrome.storage.local, async (submission) => {
+    const settings = await getSettings();
+    await setSettings({
+      ...settings,
+      name: submission.name,
+      searchEngine: submission.searchEngine as Settings['searchEngine'],
+    });
+
+    if (submission.city) await setWeatherCity(submission.city);
+
+    // Re-run page init now that settings exist, so the greeting and search
+    // engine reflect what was just entered without a manual reload.
+    await initPage();
+  });
+  if (onboardingShown) return;
+
   const focusModeActive = await initFocusModeOverlay(document, chrome.storage.local, taskRepo, () =>
     window.location.reload(),
   );
   if (focusModeActive) return;
+
+  await initPage();
+}
+
+/** Everything that renders the home base itself, separated from main() so the
+ *  onboarding completion handler can trigger it without a page reload. */
+async function initPage() {
 
   await Promise.all([
     initGreetingAndClock(),

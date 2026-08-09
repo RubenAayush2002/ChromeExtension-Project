@@ -4,8 +4,15 @@ import { curatedArtSlotForHour } from '@/lib/curated-art-time';
 
 const DEFAULT_GRADIENT = 'linear-gradient(135deg, #6d83f2, #a480f2)';
 
-const GRADIENTS: Record<string, string> = {
+/** Built-in CSS gradient presets (§6.3.1). No network, no storage cost. */
+export const GRADIENTS: Record<string, string> = {
   default: DEFAULT_GRADIENT,
+  dusk: 'linear-gradient(135deg, #2b5876, #4e4376)',
+  sunrise: 'linear-gradient(135deg, #ff9a5a, #ffd86f)',
+  mint: 'linear-gradient(135deg, #43c6ac, #b8f2e6)',
+  rose: 'linear-gradient(135deg, #ee9ca7, #ffdde1)',
+  slate: 'linear-gradient(135deg, #232526, #414345)',
+  ocean: 'linear-gradient(135deg, #2193b0, #6dd5ed)',
 };
 
 // Gradient-mode picker also offers these bundled photos alongside CSS gradients.
@@ -39,7 +46,7 @@ function pickRandom<T>(items: readonly T[]): T {
   return items[Math.floor(Math.random() * items.length)] as T;
 }
 
-function gradientModePhotoUrl(id: string): string {
+export function gradientModePhotoUrl(id: string): string {
   return new URL(`../assets/gradients/${id}.webp`, import.meta.url).href;
 }
 
@@ -81,9 +88,28 @@ export async function applyBackground(settings: BackgroundSettings): Promise<voi
       break;
     }
     case 'photo': {
-      // User photo uploads are stored as Blobs in IndexedDB; rendering wires
-      // up an object URL from the selected record once the gallery UI lands.
-      layer.style.backgroundImage = DEFAULT_GRADIENT;
+      if (!settings.selectedId) {
+        layer.style.backgroundImage = DEFAULT_GRADIENT;
+        break;
+      }
+
+      // Imported lazily so the new tab page's first paint isn't held up by
+      // opening IndexedDB when a non-photo mode is active (§12).
+      const { createIndexedDbBackgroundRepo } = await import('@/db/background-repo');
+      const photo = await createIndexedDbBackgroundRepo().get(settings.selectedId);
+
+      if (!photo) {
+        // The selected photo was deleted elsewhere — fall back rather than
+        // rendering an empty layer.
+        layer.style.backgroundImage = DEFAULT_GRADIENT;
+        break;
+      }
+
+      // Object URLs are revoked on unload rather than immediately: the
+      // browser needs the URL alive while it paints the background.
+      const objectUrl = URL.createObjectURL(photo.blob);
+      layer.style.backgroundImage = `url(${objectUrl})`;
+      window.addEventListener('unload', () => URL.revokeObjectURL(objectUrl), { once: true });
       break;
     }
   }

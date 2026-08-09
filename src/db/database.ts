@@ -1,5 +1,5 @@
 const DB_NAME = 'personal-home-base';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 export const STORES = {
   tasks: 'tasks',
@@ -7,6 +7,7 @@ export const STORES = {
   bookmarkMeta: 'bookmarkMeta',
   readLater: 'readLater',
   wordLookupCache: 'wordLookupCache',
+  backgrounds: 'backgrounds',
 } as const;
 
 let dbPromise: Promise<IDBDatabase> | null = null;
@@ -47,6 +48,21 @@ export async function getAll<T>(storeName: string): Promise<T[]> {
     const tx = db.transaction(storeName, 'readonly');
     const request = tx.objectStore(storeName).getAll();
     request.onsuccess = () => resolve(request.result as T[]);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+/** Reads a single record by primary key.
+ *
+ *  Prefer this over getAll() + find whenever records are large: getAll
+ *  deserializes every value in the store, which for image blobs means loading
+ *  tens of megabytes to retrieve one. */
+export async function getByKey<T>(storeName: string, key: IDBValidKey): Promise<T | null> {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readonly');
+    const request = tx.objectStore(storeName).get(key);
+    request.onsuccess = () => resolve((request.result as T | undefined) ?? null);
     request.onerror = () => reject(request.error);
   });
 }

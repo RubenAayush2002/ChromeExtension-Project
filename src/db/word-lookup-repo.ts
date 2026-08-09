@@ -1,14 +1,11 @@
 import type { WordLookupCache, WordLookupEntry } from '@/lib/ai-only-features';
-import { STORES, getAll, put } from '@/db/database';
+import { STORES, getByKey, put } from '@/db/database';
 
 export function createIndexedDbWordLookupCache(): WordLookupCache {
   return {
-    async get(word) {
-      // The store is keyed by word; getAll keeps this consistent with the
-      // other repos rather than introducing a second access pattern.
-      const all = await getAll<WordLookupEntry>(STORES.wordLookupCache);
-      return all.find((entry) => entry.word === word) ?? null;
-    },
+    // Keyed lookup: this runs on every Alt-hover, and the cache grows with
+    // use, so scanning the whole store would get slower over time.
+    get: (word) => getByKey<WordLookupEntry>(STORES.wordLookupCache, word),
     put: (entry) => put(STORES.wordLookupCache, entry),
   };
 }

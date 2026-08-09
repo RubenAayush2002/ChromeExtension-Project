@@ -60,16 +60,44 @@
       <h2>Weather</h2>
       <label>
         City or postcode
-        <input id="weather-city" type="text" placeholder="e.g. London" />
+        <input id="weather-city" type="text" placeholder="e.g. Dublin,IE" />
       </label>
+      <p class="field-note">
+        Add a country code for cities whose name isn't unique — “Dublin,IE” for Ireland,
+        “Dublin,US” for the American one.
+      </p>
       <label>
         OpenWeatherMap API key
         <input id="weather-api-key" type="password" placeholder="Enter your API key" />
       </label>
-      <label class="checkbox-label">
-        <input id="weather-matched-scenery" type="checkbox" />
-        Weather-matched scenery background (static scene images)
+    </section>
+
+    <section>
+      <h2>Background</h2>
+
+      <label>
+        Style
+        <select id="background-mode">
+          <option value="gradient">Gradients &amp; mood photos</option>
+          <option value="curatedArt">Curated art (changes with time of day)</option>
+          <option value="photo">My photos</option>
+          <option value="weatherMatched">Weather-matched scenery</option>
+        </select>
       </label>
+
+      <div id="gradient-picker" class="swatch-grid" hidden></div>
+
+      <div id="photo-picker" hidden>
+        <label class="upload-label">
+          Add a photo
+          <input id="photo-upload" type="file" accept="image/*" />
+        </label>
+        <p id="photo-error" class="field-note error" hidden></p>
+        <div id="photo-gallery" class="swatch-grid"></div>
+        <p id="photo-empty" class="field-note" hidden>No photos yet — add one above.</p>
+      </div>
+
+      <p id="background-note" class="field-note" hidden></p>
     </section>
 
     <section>
