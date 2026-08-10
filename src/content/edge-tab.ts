@@ -10,7 +10,7 @@ async function init() {
   if (window.top !== window) return; // only the top frame gets an edge tab
 
   const host = document.createElement('div');
-  host.id = 'personal-home-base-edge-tab-host';
+  host.id = 'zerodrift-edge-tab-host';
   host.style.cssText = 'position:fixed;top:0;z-index:2147483647;';
   document.documentElement.append(host);
 

@@ -13,7 +13,7 @@ describe('ai popover', () => {
 
   it('attaches a host element to the page', () => {
     createAiPopover();
-    expect(document.getElementById('personal-home-base-ai-popover')).not.toBeNull();
+    expect(document.getElementById('zerodrift-ai-popover')).not.toBeNull();
   });
 
   it('records a timestamp when a message is shown', () => {

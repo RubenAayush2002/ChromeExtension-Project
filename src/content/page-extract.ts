@@ -8,7 +8,7 @@ export interface PageExtractResult {
 
 declare global {
   interface Window {
-    __personalHomeBaseExtractResult?: PageExtractResult;
+    __zeroDriftExtractResult?: PageExtractResult;
   }
 }
 
@@ -17,9 +17,9 @@ declare global {
  * against the active tab for Read Later and Reading View (§7.6, §7.7). Stashes
  * the result on `window` — executeScript's return value can't be trusted to
  * survive bundling as a bare completion expression, so the caller reads this
- * back with a second, tiny executeScript({ func: () => window.__personalHomeBaseExtractResult }).
+ * back with a second, tiny executeScript({ func: () => window.__zeroDriftExtractResult }).
  */
-window.__personalHomeBaseExtractResult = {
+window.__zeroDriftExtractResult = {
   openingLines: extractOpeningLines(document),
   article: extractArticle(document),
 };

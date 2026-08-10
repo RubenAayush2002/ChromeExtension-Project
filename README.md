@@ -1,4 +1,4 @@
-# Personal Home Base
+# ZeroDrift
 
 A privacy-first Chrome extension that replaces your new tab page with a calm personal dashboard, and adds quality-of-life tools across the whole browser — tabs, bookmarks, reading, and focus.
 
@@ -73,7 +73,7 @@ The trade-off is deliberate: since nothing syncs, your data exists only in this 
 
 ```bash
 git clone <repo-url>
-cd SidekickExtension
+cd zerodrift
 npm install
 npm run build
 ```

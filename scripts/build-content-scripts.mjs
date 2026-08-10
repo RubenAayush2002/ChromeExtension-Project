@@ -10,8 +10,8 @@ const outDir = resolve(__dirname, '../dist');
 // or chrome.scripting.executeScript({ files })) can't use ES module imports —
 // each needs its own self-contained IIFE build, run after the main vite build.
 const entries = [
-  { entry: 'content/page-extract.ts', name: 'PersonalHomeBasePageExtract', fileName: 'content/page-extract.js' },
-  { entry: 'content/edge-tab.ts', name: 'PersonalHomeBaseEdgeTab', fileName: 'content/edge-tab.js' },
+  { entry: 'content/page-extract.ts', name: 'ZeroDriftPageExtract', fileName: 'content/page-extract.js' },
+  { entry: 'content/edge-tab.ts', name: 'ZeroDriftEdgeTab', fileName: 'content/edge-tab.js' },
 ];
 
 for (const { entry, name, fileName } of entries) {

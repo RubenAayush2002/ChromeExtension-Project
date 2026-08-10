@@ -2,7 +2,7 @@
  *  explain-highlighted-text and hold-key word lookup. Isolated from host-page
  *  CSS the same way the edge tab is, and positioned near the text it describes. */
 
-export const POPOVER_HOST_ID = 'personal-home-base-ai-popover';
+export const POPOVER_HOST_ID = 'zerodrift-ai-popover';
 const MAX_WIDTH = 320;
 const VIEWPORT_MARGIN = 8;
 

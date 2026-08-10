@@ -12,7 +12,7 @@ export async function extractFromTab(tabId: number): Promise<PageExtractResult |
 
   const [{ result } = { result: undefined }] = await chrome.scripting.executeScript({
     target: { tabId },
-    func: () => (window as unknown as Record<string, unknown>).__personalHomeBaseExtractResult,
+    func: () => (window as unknown as Record<string, unknown>).__zeroDriftExtractResult,
   });
 
   return (result as PageExtractResult | undefined) ?? null;

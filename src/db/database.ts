@@ -1,3 +1,7 @@
+// Kept as the project's original name deliberately: this string identifies the
+// existing IndexedDB, and renaming it would point every install at a new,
+// empty database — abandoning users' tasks, tab sets, read-later items,
+// bookmark labels and uploaded backgrounds. Changing it needs a migration.
 const DB_NAME = 'personal-home-base';
 const DB_VERSION = 4;
 
