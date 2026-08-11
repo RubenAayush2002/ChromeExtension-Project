@@ -69,6 +69,17 @@ The trade-off is deliberate: since nothing syncs, your data exists only in this 
 
 ---
 
+## 📦 Download
+
+Two ways to get ZeroDrift:
+
+- **Build it yourself** — clone the repo and follow the setup steps below.
+- **Download the pre-built zip** — grab the latest release from the [Releases page](https://github.com/<your-username>/<repo-name>/releases/latest), no build tooling needed.
+
+After unzipping, load it via `chrome://extensions` → enable **Developer mode** → **Load unpacked** → select the unzipped folder.
+
+---
+
 ## 🚀 Getting started
 
 ```bash
